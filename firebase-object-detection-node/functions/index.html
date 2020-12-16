@@ -31,7 +31,7 @@
       file = input.files[0];
       const formData = new FormData();
       formData.append('image', file);
-      fetch(window.location.pathname + '/predict', {
+      fetch('/predict', {
         method: 'POST',
         body: formData,
       }).then(response => response.json()).then(res => {

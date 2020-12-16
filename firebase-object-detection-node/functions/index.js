@@ -1,4 +1,3 @@
-const functions = require('firebase-functions');
 const express = require('express');
 const Busboy = require('busboy');
 const path = require('path');
@@ -26,22 +25,25 @@ async function loadModel() {
 
 app.get('/', async (req, res) => {
   res.sendFile(path.join(__dirname + '/index.html'));
-  loadModel();
+  // loadModel();
 })
 
 app.post('/predict', async (req, res) => {
   // Receive and parse the image from client side, then feed it into the model
   // for inference.
   const busboy = new Busboy({headers: req.headers});
-  let fileBuffer = new Buffer('');
+  let fileBuffer = Buffer.from('')
   req.files = {file: []};
 
   busboy.on('field', (fieldname, value) => {
+    console.log('field');
     req.body[fieldname] = value;
   });
 
   busboy.on('file', (fieldname, file, filename, encoding, mimetype) => {
-    file.on('data', (data) => {fileBuffer = Buffer.concat([fileBuffer, data])});
+    file.on('data', (data) => {
+      fileBuffer = Buffer.concat([fileBuffer, data]);
+    });
 
     file.on('end', () => {
       const file_object = {
@@ -60,7 +62,6 @@ app.post('/predict', async (req, res) => {
     const buf = req.files.file[0].buffer;
     const uint8array = new Uint8Array(buf);
 
-    loadModel();
     // Decode the image into a tensor.
     const imageTensor = await tf.node.decodeImage(uint8array);
     const input = imageTensor.expandDims(0);
@@ -97,8 +98,14 @@ app.post('/predict', async (req, res) => {
 
   busboy.end(req.rawBody);
   req.pipe(busboy);
+  console.log('handler retured')
+  console.log(busboy)
 });
 
-loadModel();
+loadModel().then(function(){
+  const port = process.env.PORT || 8080;
+  app.listen(port, () => {
+    console.log(`listening on port ${port}`);
+  });
+});
 
-exports.app = functions.https.onRequest(app);
